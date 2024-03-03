@@ -127,8 +127,10 @@ export default function Home() {
                         }
                     })
 
-                    if (data.msg == "deleted") {
-                        getUserNotes()
+                    if (data.msg == "done") {
+                        setTimeout(() => {
+                            getUserNotes()
+                        }, 2000);
                         swalWithBootstrapButtons.fire(
                             'Deleted!',
                             'Your file has been deleted .',
