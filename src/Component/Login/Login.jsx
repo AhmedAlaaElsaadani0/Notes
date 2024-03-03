@@ -4,26 +4,30 @@ import { useNavigate } from 'react-router-dom'
 
 export default function Login() {
     const [user, setUser] = useState({ "email": "", "password": "" });
-    const [error, setError] = useState("")  ;
+    const [error, setError] = useState("");
     const [loading, setLoading] = useState(false);
     let navigate = useNavigate();
     function getData(e) {
         setUser({ ...user, [e.target.name]: e.target.value });
 
     }
-    async function signIn(e){
+    async function signIn(e) {
         e.preventDefault();
-        setLoading(true);
-        let {data}=await axios.post('https://route-movies-api.vercel.app/signin',user);
         setLoading(false);
-        if(data.message==='success'){
-        localStorage.setItem('token',data.token);
-            navigate('/Home');
-
+        try {
+            setLoading(true);
+            let { data } = await axios.post('https://note-sigma-black.vercel.app/api/v1/users/signIn', user);
+            console.log(data);
+            if (data.msg === 'done') {
+                setLoading(false)
+                localStorage.setItem('token',`3b8ny__${data.token}`);
+                navigate('/Home');
+            }
+        } catch (error) {
+            setLoading(false)
+            console.log(error);
+            setError(error.response.data.msg);
         }
-        else{
-        setError(data.message);
-    }
     }
     return <React.Fragment>
         <div className="container my-5 py-5">
@@ -35,8 +39,8 @@ export default function Login() {
                     <div className="form-group my-2">
                         <input onChange={getData} placeholder="Enter you password" type="password" name="password" className=" form-control" />
                     </div>
-                    
-                    <button type="submit" className={`btn btn-info w-100 ${loading? "disabled": ""} `} > {loading?<i className='fa fa-spin fa-spinner'></i>:"Sign In"} </button>
+
+                    <button type="submit" className={`btn btn-info w-100 ${loading ? "disabled" : ""} `} > {loading ? <i className='fa fa-spin fa-spinner'></i> : "Sign In"} </button>
 
                     {error && <div className="alert alert-danger my-2">{error}</div>}
 

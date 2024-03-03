@@ -15,7 +15,7 @@ export default function Navbar() {
         {/* navBar */}
         <nav className="navbar navbar-expand-lg navbar-light">
             <div className="container">
-                <Link className="navbar-brand fa-2x" to="/"> <i class="fa-solid fa-note-sticky fa-beat-fade fa-sm"></i> Notes</Link>
+                <Link className="navbar-brand fa-2x" to="/"> <i className="fa-solid fa-note-sticky fa-beat-fade fa-sm"></i> Notes</Link>
                 <button className="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
                     <span className="navbar-toggler-icon"></span>
                 </button>

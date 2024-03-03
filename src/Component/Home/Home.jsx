@@ -6,12 +6,10 @@ import Swal from 'sweetalert2';
 
 export default function Home() {
     let token = localStorage.getItem('token');
-    let baseUrl = "https://route-movies-api.vercel.app"
-    let decoded = jwtDecode(token);
+    let baseUrl = "https://note-sigma-black.vercel.app/api/v1"
     const [Notes, setNotes] = useState([]);
     const [Note, setNote] = useState({});
-    const [loading, setLoading] = useState(true);
-
+    const [loading, setLoading] = useState(false);
 
     useEffect(() => {
 
@@ -29,19 +27,28 @@ export default function Home() {
      * if error set notes state to empty array
      */
     async function getUserNotes() {
-        setLoading(true);
-        let { data } = await axios.get(`${baseUrl}/getUserNotes`, {
-            headers: {
-                token: token,
-                userID: decoded._id
-            }
-        });
-        console.log(data);
-        if (data.message == "success") setNotes(data.Notes);
-        if (data.message == "no notes found") setNotes([]);
-
         setLoading(false);
-
+        try {
+            const token = localStorage.getItem('token');
+            let { data } = await axios.get(baseUrl + "/notes", {
+                headers: {
+                    "token": token
+                }
+            })
+            setLoading(true);
+            setNotes(data.notes)
+        }
+        catch (error) {
+            let { data } = error.response;
+            console.log(data);
+            Swal.fire({
+                icon: 'warning',
+                title: 'Oops...',
+                text: data.msg,
+                footer: 'try to add Note to get started!'
+            })
+            setNotes([]);
+        }
 
     }
     //get new Note from user
@@ -64,26 +71,34 @@ export default function Home() {
      */
     async function addNote(e) {
         e.preventDefault();
-        let { data } = await axios.post(baseUrl + "/addNote", {
-            ...Note,
-            token: localStorage.getItem("token"),
-            userID: decoded._id
-        })
-        if (data.message == "success") {
-            Swal.fire('Added', 'Note Added Successfully', 'success').then(() => {
 
-                getUserNotes();
+        try {
+            const token = localStorage.getItem("token");
+            let { data } = await axios.post(baseUrl + '/notes', {
+                ...Note,
+            }, {
+                headers: { token }
             })
-        }
+            if (data.msg === 'done') {
 
+                Swal.fire('Added', 'Note Added Successfully', 'success').then(() => {
+                    getUserNotes();
+                })
+            }
+        }
+        catch (error) {
+            console.log(error);
+        }
     }
+
+
     /*
     *delete Note function 
     * take note id as parameter
     * send request to server to delete note
     * if success get user notes again
     * if error show error message
-*/
+    */
     async function deleteNote(noteID) {
         const swalWithBootstrapButtons = Swal.mixin({
             customClass: {
@@ -105,18 +120,18 @@ export default function Home() {
             if (result.isConfirmed) {
 
                 (async () => {
-                    let { data } = await axios.delete(baseUrl + "/deleteNote", {
-                        data: {
-                            "NoteID": noteID,
-                            "token": localStorage.getItem("token")
+                    const token = localStorage.getItem("token");
+                    let { data } =await axios.delete(baseUrl + "/notes/" + noteID, {
+                        headers: {
+                            "token": token
                         }
                     })
 
-                    if (data.message == "deleted") {
+                    if (data.msg == "deleted") {
                         getUserNotes()
                         swalWithBootstrapButtons.fire(
                             'Deleted!',
-                            'Your file has been deleted.',
+                            'Your file has been deleted .',
                             'success'
                         )
                     }
@@ -146,9 +161,9 @@ export default function Home() {
      */
     function getNotetoEdition(index) {
         console.log(Notes[index]);
-        document.querySelector("#exampleModal1 input").value = Notes[index].title;
-        document.querySelector("#exampleModal1 textarea").value = Notes[index].desc;
-        setNote({ ...Note, "title": Notes[index].title, "desc": Notes[index].desc, "NoteID": Notes[index]._id })
+        document.querySelector("#EditionModal1 input").value = Notes[index].title;
+        document.querySelector("#EditionModal1 textarea").value = Notes[index].content;
+        setNote({ ...Note, "title": Notes[index].title, "content": Notes[index].content, "NoteID": Notes[index]._id })
     }
     function updateNote(e) {
         e.preventDefault();
@@ -172,10 +187,14 @@ export default function Home() {
             if (result.isConfirmed) {
 
                 (async () => {
+                    const headers = {
+                        'token': localStorage.getItem('token'),
+                        'Content-Type': 'application/json'
+                      };                      
                     console.log(Note);
-                    let { data } = await axios.put(baseUrl + "/updateNote", { "token": token, ...Note })
+                    let { data } = await axios.put(baseUrl + "/notes/"+Note.NoteID, { ...Note },{headers:headers})
                     console.log(data);
-                    if (data.message == "updated") {
+                    if (data.msg == "done") {
                         getUserNotes()
                         swalWithBootstrapButtons.fire(
                             'Updated!',
@@ -218,7 +237,7 @@ export default function Home() {
                         </div>
                         <div className="modal-body">
                             <input onChange={getNote} placeholder="Type Title" name="title" className="form-control" type="text" />
-                            <textarea onChange={getNote} className="form-control my-2" placeholder="Type your note" name="desc" id="" cols="30" rows="10"></textarea>
+                            <textarea onChange={getNote} className="form-control my-2" placeholder="Type your note" name="content" id="" cols="30" rows="10"></textarea>
                         </div>
                         <div className="modal-footer">
                             <button type="button" className="btn btn-secondary" data-dismiss="modal">Close</button>
@@ -230,7 +249,7 @@ export default function Home() {
         </div>
 
         {/* <!-- Edit Modal --> */}
-        <div className="modal fade" id="exampleModal1" tabIndex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
+        <div className="modal fade" id="EditionModal1" tabIndex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
             <form id="edit-form" onSubmit={updateNote}>
                 <div className="modal-dialog">
                     <div className="modal-content">
@@ -239,7 +258,7 @@ export default function Home() {
                         </div>
                         <div className="modal-body">
                             <input onChange={getNote} placeholder="Type Title" name="title" className="form-control" type="text" />
-                            <textarea onChange={getNote} className="form-control my-2" placeholder="Type your note" name="desc" id="" cols="30" rows="10"></textarea>
+                            <textarea onChange={getNote} className="form-control my-2" placeholder="Type your note" name="content" id="" cols="30" rows="10"></textarea>
                         </div>
                         <div className="modal-footer">
                             <button type="button" className="btn btn-secondary" data-bs-dismiss="modal" data-dismiss="modal">Close</button>
@@ -260,10 +279,10 @@ export default function Home() {
                     return <div key={index} className="col-md-4 my-4">
                         <div className="note p-4">
                             <h3 className="float-start">{note.title}</h3>
-                            <a onClick={() => { getNotetoEdition(index) }} data-bs-toggle="modal" data-bs-target="#exampleModal1" ><i className="fas fa-edit float-end edit"></i></a>
+                            <a onClick={() => { getNotetoEdition(index) }} data-bs-toggle="modal" data-bs-target="#EditionModal1" ><i className="fas fa-edit float-end edit"></i></a>
                             <a onClick={() => { deleteNote(note._id) }}> <i className="fas fa-trash-alt float-end px-3 del"></i></a>
                             <span className="clearfix"></span>
-                            <pre>{note.desc}</pre>
+                            <pre>{note.content}</pre>
                         </div>
                     </div>
                 })}
@@ -272,7 +291,7 @@ export default function Home() {
 
             </div>
 
-            {Notes.length == 0 && !loading ? <div className="row">
+            {Notes.length == 0 && loading ? <div className="row">
                 <h2 className='text-white text-center '>No notes found</h2>
             </div> : ""}
         </div>
