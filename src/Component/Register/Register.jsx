@@ -52,6 +52,7 @@ export default function Register() {
     async function signUp(e) {
         e.preventDefault();
         setLoading(true);
+        //Here we are checking if there are any errors in the form
         try {
             let { data } = await axios.post('https://note-sigma-black.vercel.app/api/v1/users/signUp', user);
             if (data.msg === 'done') {
